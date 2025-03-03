@@ -1,5 +1,6 @@
 from simulators import *
 from matrix_utils import *
+from QCNN import _noise, _2local_conv, _2local_pool
 
 
 def test_both_simulators():
@@ -58,3 +59,44 @@ def test_nq_noise():
                 X_q = reduce(torch.kron, [I if i != q else X for i in range(n)])
                 init_rho = (1 - mu) * init_rho + mu * X_q @ init_rho @ X_q
             assert np.allclose(torch.sum(torch.abs(final_state_simulator - init_rho)**2).item().real, 0)
+
+
+def test_qcnn_1layer():
+    batch_size = 20
+    for q in range(4, 9):
+        data_ids = get_random_computational_ids(q, batch_size)
+        data_states = convert_id_to_state(data_ids, q)
+        data_dm = convert_id_to_dm(data_ids, q)
+        for _ in range(50):
+            U = torch.randn((4,4), dtype=torch.complex64)
+            U = torch.matrix_exp(U - conjugate_transpose(U))
+            mu = torch.rand(1).item()
+
+            dm_sim = state_simulator(n=q, state_init=data_dm)
+            
+            dm_sim = _noise(dm_sim, mu)
+            dm_sim = _2local_conv(dm_sim, U)
+            dm_sim = _2local_pool(dm_sim)
+            
+            rho_dm_sim = dm_sim.state.reshape(-1, 1<<q//2, 1<<q//2)
+
+            mix_sim = state_mixture_simulator(n=q, state_init=data_states)
+            
+            mix_sim = _noise(mix_sim, mu)
+            mix_sim = _2local_conv(mix_sim, U)
+            mix_sim = _2local_pool(mix_sim)
+            
+            rho_mix_sim = mix_sim.convert_to_density_matrix().state.reshape(-1, 1<<q//2, 1<<q//2)
+            assert np.allclose(torch.sum(rho_dm_sim - rho_mix_sim).abs()**2, 0)
+
+
+def main():
+    test_both_simulators()
+    test_1q_noise()
+    test_nq_noise()
+    test_qcnn_1layer()
+    print('All tests have passed')
+
+
+if __name__ == '__main__':
+    main()
