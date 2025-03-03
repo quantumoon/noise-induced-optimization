@@ -20,7 +20,7 @@ class state_simulator:
             self.state = torch.reshape(self.state, [batch_size]+[2]*(2*n))
             self.batch_size = batch_size
         else:
-            self.state = state_init.clone().detach()
+            self.state = state_init.clone().detach().requires_grad_(True)
             self.batch_size = state_init.shape[0]
 
     def apply_unitary(self, U,qubits = [0]):
@@ -93,6 +93,9 @@ class state_simulator:
                 new_state = new_state + self.apply_matrix_(state, K, qubits=[qubit])
             state = new_state
         self.state = state
+        
+    def convert_to_density_matrix(self):
+        return self
 
 
 class state_mixture_simulator:
@@ -169,7 +172,29 @@ class state_mixture_simulator:
 
             self.state = torch.reshape(self.state, [self.batch_size, -1]+[2]*self.n)
 
-        return measurement 
+        return measurement
+    
+    def apply_noise(self, mu):
+        
+        # It works only when initial mixture contains just one state vector |j>
+        B = self.state.shape[0]
+        n = self.n
+
+        state_flat = self.state.reshape(B, 2**n)
+        initial_index = state_flat.to(torch.float32).argmax(dim=1)  # shape: [B]
+        noise_patterns = torch.arange(2**n, device=self.device)  # shape: [2**n]
+
+        bits = ((noise_patterns[:, None] >> torch.arange(n, device=self.device)) & 1).to(torch.float32)
+        weight = bits.sum(dim=1)  # shape: [2**n]
+        probs_noise = ( (1 - mu) ** (n - weight) ) * ( mu ** weight )  # shape: [2**n]
+
+        new_indices = initial_index.unsqueeze(1) ^ noise_patterns.unsqueeze(0)  # shape: [B, 2**n]
+
+        one_hot_new = torch.nn.functional.one_hot(new_indices, num_classes=2**n)
+        new_state = one_hot_new.reshape(B, 2**n, *([2] * n)).to(self.dtype)
+
+        self.state = new_state
+        self.probs = probs_noise.unsqueeze(0).repeat(B, 1)
     
     def convert_to_density_matrix(self):
         temp_state = torch.einsum(self.state, list(range(self.n+2)), torch.sqrt(self.probs), [0,1], list(range(self.n+2)))
