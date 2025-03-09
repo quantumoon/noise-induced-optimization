@@ -55,6 +55,7 @@ def test_nq_noise():
             sim.apply_noise(mu)
             final_state_simulator = sim.state.reshape(1<<n, 1<<n)
 
+            # Explicit computation
             for q in range(n):
                 X_q = reduce(torch.kron, [I if i != q else X for i in range(n)])
                 init_rho = (1 - mu) * init_rho + mu * X_q @ init_rho @ X_q
