@@ -1,7 +1,7 @@
 **Noise‑Induced Optimization**
 
 This repository accompanies the paper [*Regularizing Quantum Loss Landscapes by Noise Injection*](https://arxiv.org/abs/2505.08759).
-The code here reproduces the experiments from that article.
+The code here reproduces the experiments from that article. In our numerical experiments we used NVIDIA RTX A6000 with 48 GB of memory.
 
 **Repository structure**
 ```
