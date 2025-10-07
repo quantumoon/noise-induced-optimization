@@ -28,3 +28,23 @@ The code here reproduces the experiments from that article. In our numerical exp
 - Pandas (2.1.4)
 - Seaborn (0.13.1)
 ```
+**Citation**
+
+If you use this code for your research, please cite our paper:
+
+```
+@article{zmmm-ymdq,
+  title = {Regularizing quantum loss landscapes by noise injection},
+  author = {Bagaev, Daniil S. and Gavreev, Maxim A. and Mastiukova, Alena S. and Fedorov, Aleksey K. and Nemkov, Nikita A.},
+  journal = {Phys. Rev. A},
+  volume = {112},
+  issue = {3},
+  pages = {032417},
+  numpages = {9},
+  year = {2025},
+  month = {Sep},
+  publisher = {American Physical Society},
+  doi = {10.1103/zmmm-ymdq},
+  url = {https://link.aps.org/doi/10.1103/zmmm-ymdq}
+}
+```
